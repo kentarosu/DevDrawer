@@ -10,7 +10,9 @@ import android.util.Log;
 
 import com.owentech.DevDrawer.R;
 import com.owentech.DevDrawer.appwidget.DDWidgetProvider;
+import com.owentech.DevDrawer.utils.AppConstants;
 import com.owentech.DevDrawer.utils.Database;
+import com.owentech.DevDrawer.utils.NotificationHelper;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,32 +23,25 @@ import com.owentech.DevDrawer.utils.Database;
  */
 public class AppUninstalledReceiver extends BroadcastReceiver {
 
-    Database database;
-    public static String TAG = "DevDrawer-AppUninstalledReceiver";
-
     @Override
     public void onReceive(Context context, Intent intent) {
         // App has been removed, if it is in the app table remove from the widget
         String uninstalledPackage = intent.getData().getSchemeSpecificPart();
 
-        database = new Database(context);
-        database.createTables();
+        Database.getInstance(context).createTables();
 
-        if (database.getAppsCount() != 0) {
-
-            if (database.doesAppExistInDb(uninstalledPackage)) {
-                Log.d(TAG, "App Exists");
-                database.deleteAppFromDb(uninstalledPackage);
+        if (Database.getInstance(context).getAppsCount() != 0) {
+            if (Database.getInstance(context).doesAppExistInDb(uninstalledPackage)) {
+                Database.getInstance(context).deleteAppFromDb(uninstalledPackage);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                     AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
                     int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, DDWidgetProvider.class));
                     appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.listView);
                 }
-            } else {
-                Log.d(TAG, "App Doesn't Exist");
+                int match = Database.getInstance(context).parseAndMatch(uninstalledPackage, AppConstants.NOTIFICATION);
+                NotificationHelper.removeNotification(context, match);
             }
-
         }
     }
 }

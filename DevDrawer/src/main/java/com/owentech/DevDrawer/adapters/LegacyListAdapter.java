@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import com.owentech.DevDrawer.R;
 import com.owentech.DevDrawer.activities.ClickHandlingActivity;
+import com.owentech.DevDrawer.utils.AppConstants;
 import com.owentech.DevDrawer.utils.Database;
 
 import java.util.ArrayList;
@@ -31,14 +32,12 @@ public class LegacyListAdapter extends BaseAdapter {
     public List<Drawable> applicationIcons;
 
     Activity activity;
-    Database database;
     SharedPreferences sp;
     boolean rootClearData;
 
     public LegacyListAdapter(Activity activity) {
         super();
         this.activity = activity;
-        database = new Database(activity);
         getApps();
         notifyDataSetChanged();
         sp = PreferenceManager.getDefaultSharedPreferences(activity);
@@ -95,23 +94,14 @@ public class LegacyListAdapter extends BaseAdapter {
         holder.packageName.setText(packageNames.get(position));
         holder.appName.setText(applicationNames.get(position));
 
-        if (sp.getString("theme", "Light").equals("Light")) {
-            holder.appName.setTextColor(activity.getResources().getColor(R.color.app_name_light));
-            if (holder.delete != null) holder.delete.setImageResource(R.drawable.delete_imageview);
-            if (holder.settings != null)
-                holder.settings.setImageResource(R.drawable.settings_imageview);
-            if (holder.clear != null) holder.clear.setImageResource(R.drawable.clear_imageview);
-            if (holder.more != null) holder.more.setImageResource(R.drawable.more_imageview);
-        } else {
-            holder.appName.setTextColor(activity.getResources().getColor(R.color.app_name_dark));
-            if (holder.delete != null)
-                holder.delete.setImageResource(R.drawable.delete_imageview_dark);
-            if (holder.settings != null)
-                holder.settings.setImageResource(R.drawable.settings_imageview_dark);
-            if (holder.clear != null)
-                holder.clear.setImageResource(R.drawable.clear_imageview_dark);
-            if (holder.more != null) holder.more.setImageResource(R.drawable.more_imageview_dark);
-        }
+
+//        holder.appName.setTextColor(activity.getResources().getColor(R.color.app_name_light));
+//        if (holder.delete != null) holder.delete.setImageResource(R.drawable.delete_imageview);
+//        if (holder.settings != null)
+//            holder.settings.setImageResource(R.drawable.settings_imageview);
+//        if (holder.clear != null) holder.clear.setImageResource(R.drawable.clear_imageview);
+//        if (holder.more != null) holder.more.setImageResource(R.drawable.more_imageview);
+
 
         if (holder.delete != null) holder.delete.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -162,7 +152,7 @@ public class LegacyListAdapter extends BaseAdapter {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(activity);
 
         // Get all apps from the app table
-        String[] packages = database.getAllAppsInDatabase(sp.getString("widgetSorting", "added"));
+        String[] packages = Database.getInstance(activity).getAllAppsInDatabase(sp.getString("widgetSorting", "added"), AppConstants.SHORTCUT);
         pm = activity.getPackageManager();
 
         // Defensive code, was getting some strange behaviour and forcing the lists seems to fix

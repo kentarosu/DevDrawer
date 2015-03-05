@@ -35,19 +35,16 @@ public class FilterListAdapter extends BaseAdapter {
 
     private Activity activity;
     private List<PackageCollection> packageCollections;
-    private int mAppWidgetId;
+    public static int currentWidgetId = -1;
 
-    public FilterListAdapter(Activity activity, int appWidgetId) {
+    public FilterListAdapter(Activity activity) {
         this.activity = activity;
         packageCollections = new ArrayList<PackageCollection>();
-        mAppWidgetId = appWidgetId;
     }
 
     @Override
     public void notifyDataSetChanged() {
-        Database database = new Database(activity);
-        packageCollections = database.getAllFiltersInDatabase(mAppWidgetId);
-
+        packageCollections = Database.getInstance(activity).getAllFiltersInDatabase(currentWidgetId);
         super.notifyDataSetChanged();
     }
 
@@ -94,9 +91,8 @@ public class FilterListAdapter extends BaseAdapter {
         holder.deleteButton.setOnClickListener(new OnClickListener() {
 
             public void onClick(View view) {
-                Database database = new Database(activity);
-                database.removeFilterFromDatabase(packageCollections.get(position).mId);
-                database.removeAppFromDatabase(packageCollections.get(position).mId);
+                Database.getInstance(activity).removeFilterFromDatabase(packageCollections.get(position).mId);
+                Database.getInstance(activity).removeAppFromDatabase(packageCollections.get(position).mId);
                 notifyDataSetChanged();
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {

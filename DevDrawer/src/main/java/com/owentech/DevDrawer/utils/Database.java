@@ -5,14 +5,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.util.SparseArray;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,6 +24,14 @@ public class Database {
 
     SQLiteDatabase db;
     Context ctx;
+    private static Database instance;
+
+    public static Database getInstance(Context context){
+        if (instance == null){
+            instance = new Database(context);
+        }
+        return instance;
+    }
 
     public static int NOT_FOUND = 1000000;
 
@@ -72,10 +79,6 @@ public class Database {
                 + "id INTEGER PRIMARY KEY, package TEXT, filterid INTEGER, widgetid INTEGER);";
         db.execSQL(CREATE_TABLE_APPS);
 
-        String CREATE_TABLE_LOCALES = "CREATE TABLE IF NOT EXISTS devdrawer_locales ("
-                + "name TEXT);";
-        db.execSQL(CREATE_TABLE_LOCALES);
-
         String CREATE_TABLE_WIDGETS = "CREATE TABLE IF NOT EXISTS devdrawer_widgets (id INTEGER PRIMARY KEY, name TEXT);";
         db.execSQL(CREATE_TABLE_WIDGETS);
 
@@ -104,7 +107,7 @@ public class Database {
 
     public void renameWidget(int widgetId, String name) {
         connectDB();
-        db.execSQL("UPDATE devdrawer_widgets SET name='" + name + "' WHERE id ='" + widgetId + "'");
+        db.execSQL("UPDATE devdrawer_widgets SET name='" + name.replace("'","''") + "' WHERE id ='" + widgetId + "'");
         closeDB();
     }
 
@@ -123,32 +126,26 @@ public class Database {
         closeDB();
     }
 
-    public Map<Integer, String> getWidgetNames() {
-        Map<Integer, String> result = new HashMap<Integer, String>();
+    public SparseArray<String> getWidgetNames() {
+        SparseArray<String> result = new SparseArray<String>();
 
         connectDB();
+        Cursor cursor = db.query("devdrawer_widgets", null, null, null, null, null, null, null);
+        cursor.moveToFirst();
 
-        Cursor getAllCursor = db.query("devdrawer_widgets", null, null, null, null, null, null, null);
+        while (!cursor.isAfterLast()) {
 
-
-        getAllCursor.moveToFirst();
-
-        while (!getAllCursor.isAfterLast()) {
-
-            String name = getAllCursor.getString(1);
+            String name = cursor.getString(1);
             if (name == null || name.length() == 0){
-                name = "Unnamed";
+                name = AppConstants.UNNAMED;
             }
 
-            result.put(getAllCursor.getInt(0), name);
-            getAllCursor.moveToNext();
+            result.put(cursor.getInt(0), name);
+            cursor.moveToNext();
         }
 
-        getAllCursor.close();
+        cursor.close();
         closeDB();
-
-        closeDB();
-
         return result;
     }
 
@@ -276,17 +273,11 @@ public class Database {
         String[] packages;
 
         connectDB();
-
-        Cursor getAllCursor = db.query("devdrawer_app", null, null, null, null, null, (order.equals(Constants.ORDER_ORIGINAL)) ? null : "package ASC", null);
-
-        Log.d("DATABASE", "getAllAppsInDatabase: " + Integer.toString(getAllCursor.getCount()));
-
+        Cursor getAllCursor = db.query("devdrawer_app", null, null, null, null, null, (order.equals(AppConstants.ORDER_ORIGINAL)) ? null : "package ASC", null);
         getAllCursor.moveToFirst();
-
         packages = new String[getAllCursor.getCount()];
 
         int i = 0;
-
         while (!getAllCursor.isAfterLast()) {
             packages[i] = getAllCursor.getString(1);
             i++;
@@ -296,7 +287,7 @@ public class Database {
         getAllCursor.close();
         closeDB();
 
-        if (order.equals(Constants.ORDER_ORIGINAL)) {
+        if (order.equals(AppConstants.ORDER_ORIGINAL)) {
             Collections.reverse(Arrays.asList(packages));
         }
 
@@ -310,17 +301,11 @@ public class Database {
         String[] packages;
 
         connectDB();
-
-        Cursor getAllCursor = db.query("devdrawer_app", null, "widgetid = " + widgetId, null, null, null, (order.equals(Constants.ORDER_ORIGINAL)) ? null : "package ASC", null);
-
-        Log.d("DATABASE", "getAllAppsInDatabase: " + Integer.toString(getAllCursor.getCount()));
-
+        Cursor getAllCursor = db.query("devdrawer_app", null, "widgetid = " + widgetId, null, null, null, (order.equals(AppConstants.ORDER_ORIGINAL)) ? null : "package ASC", null);
         getAllCursor.moveToFirst();
-
         packages = new String[getAllCursor.getCount()];
 
         int i = 0;
-
         while (!getAllCursor.isAfterLast()) {
             packages[i] = getAllCursor.getString(1);
             i++;
@@ -330,12 +315,14 @@ public class Database {
         getAllCursor.close();
         closeDB();
 
-        if (order.equals(Constants.ORDER_ORIGINAL)) {
+        if (order.equals(AppConstants.ORDER_ORIGINAL)) {
             Collections.reverse(Arrays.asList(packages));
         }
 
         return packages;
     }
+
+
 
     // ////////////////////////////////////////////////////
     // Method to get a count of rows in the filter table
@@ -428,19 +415,15 @@ public class Database {
     /////////////////////////////////////////////////////////////////////
     // Method to parse each row and return if the new package matches
     /////////////////////////////////////////////////////////////////////
-    // TODO: Make this work for exact package name
     public int parseAndMatch(String p) {
 
         int match = NOT_FOUND;
 
         connectDB();
-
         Cursor getAllCursor = db.query("devdrawer_filter", null, null, null, null, null, null, null);
-
         getAllCursor.moveToFirst();
 
         while (!getAllCursor.isAfterLast()) {
-
             String packageFilter = getAllCursor.getString(1).toLowerCase();
 
             if (packageFilter.contains("*")) {
@@ -449,36 +432,27 @@ public class Database {
             } else {
                 if (p.toLowerCase().equals(packageFilter.toLowerCase()))
                     match = Integer.valueOf(getAllCursor.getString(0));
-
             }
-
             getAllCursor.moveToNext();
-
         }
 
         getAllCursor.close();
         closeDB();
-
         return match;
-
     }
 
     /////////////////////////////////////////////////////////////////////
     // Method to parse each row and return if the new package matches
     /////////////////////////////////////////////////////////////////////
-    // TODO: Make this work for exact package name
     public int parseAndMatch(String p, int widgetId) {
 
         int match = NOT_FOUND;
 
         connectDB();
-
         Cursor getAllCursor = db.query("devdrawer_filter", null, "widgetid = " + widgetId, null, null, null, null, null);
-
         getAllCursor.moveToFirst();
 
         while (!getAllCursor.isAfterLast()) {
-
             String packageFilter = getAllCursor.getString(1).toLowerCase();
 
             if (packageFilter.contains("*")) {
@@ -487,18 +461,14 @@ public class Database {
             } else {
                 if (p.toLowerCase().equals(packageFilter.toLowerCase()))
                     match = Integer.valueOf(getAllCursor.getString(0));
-
             }
-
             getAllCursor.moveToNext();
-
         }
 
         getAllCursor.close();
         closeDB();
 
         return match;
-
     }
 
     ///////////////////////////////////
@@ -509,43 +479,4 @@ public class Database {
         db.execSQL("UPDATE devdrawer_filter SET package='" + newString + "' WHERE id ='" + id + "'");
         closeDB();
     }
-
-    ///////////////////////////////
-    // Method to add all locales
-    ///////////////////////////////
-    public void addLocale(String localeDescriptor) {
-        connectDB();
-
-        db.execSQL("INSERT INTO devdrawer_locales (name) VALUES ('" + localeDescriptor + "');");
-
-        closeDB();
-    }
-
-    public List<String> getLocales() {
-        connectDB();
-
-        List<String> list = new ArrayList<String>();
-
-        Cursor getAllCursor = db.query("devdrawer_locales", null, null, null, null, null, "name ASC", null);
-
-        if (getAllCursor.getCount() != 0) {
-            getAllCursor.moveToFirst();
-
-            while (!getAllCursor.isAfterLast()) {
-                list.add(getAllCursor.getString(0));
-                getAllCursor.moveToNext();
-            }
-        }
-
-        return list;
-    }
-
-    public void deleteLocale(String localeDescriptor) {
-        connectDB();
-
-        db.execSQL("DELETE FROM devdrawer_locales WHERE name = '" + localeDescriptor + "';");
-
-        closeDB();
-    }
-
 }

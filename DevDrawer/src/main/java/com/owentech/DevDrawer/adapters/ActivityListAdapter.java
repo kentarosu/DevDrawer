@@ -67,16 +67,11 @@ public class ActivityListAdapter extends BaseAdapter {
         holder.txtActivityName.setText(activityList.get(position)
                 .substring(activityList.get(position).lastIndexOf('.'), activityList.get(position).length()));
 
-        // OnClick action for Delete Button
-
         return convertView;
     }
 
     @Override
     public void notifyDataSetChanged() {
-//		Database database = new Database(mContext);
-//		packageCollections = database.getAllFiltersInDatabase();
-
         super.notifyDataSetChanged();
     }
 }

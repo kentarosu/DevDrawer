@@ -3,7 +3,7 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:padding="5dp"
-    android:background="@drawable/card">
+    android:background="@drawable/cardbackground">
 
     <Button
         android:id="@+id/touchArea"
@@ -18,64 +18,63 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:src="@drawable/ic_launcher" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="38dp"
+        android:orientation="vertical"
+        android:layout_toRightOf="@id/imageView">
 
     <TextView
         android:id="@+id/packageNameTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:layout_marginLeft="5dp"
-        android:layout_toLeftOf="@+id/uninstallImageButton"
-        android:layout_toRightOf="@+id/imageView"
         android:ellipsize="end"
-        android:fontFamily="sans-serif-light"
+        android:fontFamily="sans-serif-condensed"
         android:lines="1"
-        android:paddingTop="5dp"
         android:text="Package Name"
-        android:textAppearance="@android:style/TextAppearance.Holo.Small"
-        android:textColor="#f80"
-        android:textSize="10dp" />
+        android:textColor="@color/dev_drawer_orange"
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/appNameTextView"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@id/imageView"
-        android:layout_below="@+id/packageNameTextView"
+        android:layout_height="match_parent"
         android:layout_marginLeft="5dp"
-        android:layout_toLeftOf="@+id/uninstallImageButton"
-        android:layout_toRightOf="@+id/imageView"
         android:ellipsize="end"
         android:fontFamily="sans-serif-light"
-        android:gravity="bottom"
-        android:paddingBottom="5dp"
+        android:gravity="center_vertical"
         android:text="App Name"
         android:textAppearance="@android:style/TextAppearance.Medium"
-        android:textColor="@color/app_name_light" />
+        android:textColor="@color/app_name_light"
+        android:textSize="16sp"/>
+
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/uninstallImageButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_alignBottom="@+id/imageView"
         android:layout_alignTop="@+id/imageView"
         android:layout_toLeftOf="@+id/appDetailsImageButton"
         android:scaleType="centerInside"
-        android:src="@drawable/delete_imageview" />
+        android:src="@drawable/trash" />
 
     <ImageView
         android:id="@+id/appDetailsImageButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_alignBottom="@+id/imageView"
         android:layout_alignParentRight="true"
         android:layout_alignTop="@+id/imageView"
         android:scaleType="centerInside"
-        android:src="@drawable/settings_imageview" />
+        android:src="@drawable/settings"/>
 
 </RelativeLayout>

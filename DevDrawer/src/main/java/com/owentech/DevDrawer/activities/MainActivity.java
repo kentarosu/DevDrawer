@@ -5,69 +5,59 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AutoCompleteTextView;
-import android.widget.ImageView;
 import android.widget.RemoteViews;
-import android.widget.Toast;
 
 import com.astuetz.PagerSlidingTabStrip;
-import com.owentech.DevDrawer.AppWidgetFragment;
 import com.owentech.DevDrawer.R;
-import com.owentech.DevDrawer.adapters.PartialMatchAdapter;
 import com.owentech.DevDrawer.appwidget.DDWidgetProvider;
-import com.owentech.DevDrawer.utils.AddAllAppsAsync;
+import com.owentech.DevDrawer.fragments.ShortcutFragment;
+import com.owentech.DevDrawer.utils.OttoManager;
+import com.owentech.DevDrawer.fragments.NotificationsFragment;
+import com.owentech.DevDrawer.fragments.WidgetsFragment;
+import com.owentech.DevDrawer.utils.AppConstants;
 import com.owentech.DevDrawer.utils.AppWidgetUtil;
-import com.owentech.DevDrawer.utils.Constants;
 import com.owentech.DevDrawer.utils.Database;
-import com.viewpagerindicator.TitlePageIndicator;
 
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
+import java.util.logging.Filter;
 
+import butterknife.ButterKnife;
+import butterknife.InjectView;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
 
 
-public class MainActivity extends FragmentActivity implements TextWatcher, View.OnClickListener {
+public class MainActivity extends FragmentActivity implements TextWatcher {
 
-    private ViewPager mViewPager;
-    private WidgetFragmentViewPagerAdapter mViewPagerAdapter;
+    @InjectView(R.id.main_viewpager) ViewPager viewPager;
+    @InjectView(R.id.tabs) PagerSlidingTabStrip tabs;
 
-//    private TitlePageIndicator mTitlePageIndicator;
-    private PagerSlidingTabStrip tabs;
-
-    private AutoCompleteTextView mAutoCompleteTextView;
-    private PartialMatchAdapter mPartialMatchAdapter;
-
-    private Database mDatabase;
+    WidgetsFragment widgetsFragment;
+    NotificationsFragment notificationsFragment;
+    ShortcutFragment shortcutFragment;
     private int[] mAppWidgetIds;
 
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.activity_main);
-
+        ButterKnife.inject(this);
         // Set up ActionBar to use custom view (Robot Light font)
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
             getActionBar().setDisplayShowTitleEnabled(false);
@@ -77,61 +67,80 @@ public class MainActivity extends FragmentActivity implements TextWatcher, View.
             getActionBar().setDisplayShowCustomEnabled(true);
         }
 
-        mDatabase = new Database(this);
-        mDatabase.createTables();
-
+        Database.getInstance(this).createTables();
         mAppWidgetIds = AppWidgetUtil.findAppWidgetIds(this);
 
-        setupViews();
+        viewPager.setAdapter(pagerAdapter);
+
+        tabs.setIndicatorColor(getResources().getColor(R.color.dev_drawer_orange));
+        tabs.setViewPager(viewPager);
 
         if (getIntent() != null) {
             int appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1);
             if (appWidgetId != -1) {
                 for (int i = 0; i < mAppWidgetIds.length; i++) {
                     if (appWidgetId == mAppWidgetIds[i]) {
-                        mViewPager.setCurrentItem(i);
+                        viewPager.setCurrentItem(i);
                     }
                 }
 
-                mDatabase.addWidgetToDatabase(appWidgetId, "");
-                Crouton.makeText(this, "Press back to save the widget, not home", Style.ALERT).show();
+                Database.getInstance(this).addWidgetToDatabase(appWidgetId, "");
+                Crouton.makeText(this, getString(R.string.back_to_save), Style.ALERT).show();
             }
         }
     }
 
-    private void setupViews() {
-        List<String> appPackages = getExistingPackages(this);
+    private PagerAdapter pagerAdapter = new FragmentPagerAdapter(getSupportFragmentManager()) {
+        @Override
+        public android.support.v4.app.Fragment getItem(int position) {
 
-        mPartialMatchAdapter = new PartialMatchAdapter(this, appPackages);
-        mAutoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.activity_main_addPackageEditText);
-        mAutoCompleteTextView.setAdapter(mPartialMatchAdapter);
-        mAutoCompleteTextView.addTextChangedListener(this);
+            switch(position){
+                case 0:{
+                    if (widgetsFragment == null) {
+                        widgetsFragment = new WidgetsFragment();
+                    }
+                    return widgetsFragment;
+                }
+                case 1:{
+                    if (notificationsFragment == null) {
+                        notificationsFragment = new NotificationsFragment();
+                    }
+                    return notificationsFragment;
+                }
+                case 2:{
+                    if (shortcutFragment == null) {
+                        shortcutFragment = new ShortcutFragment();
+                    }
+                    return shortcutFragment;
+                }
 
-        ImageView addButton = (ImageView) findViewById(R.id.activity_main_addButton);
-        addButton.setOnClickListener(this);
+                default:
+                    return null;
+            }
+        }
 
+        @Override
+        public CharSequence getPageTitle(int position) {
+            switch(position){
+                case 0:{
+                    return getString(R.string.tab_widgets);
+                }
+                case 1:{
+                    return getString(R.string.tab_notifications);
+                }
+                case 2:{
+                    return getString(R.string.tab_shortcut);
+                }
+                default:
+                    return "";
+            }
+        }
 
-        mViewPagerAdapter = new WidgetFragmentViewPagerAdapter(getSupportFragmentManager());
-        mViewPager = (ViewPager) findViewById(R.id.main_viewpager);
-        mViewPager.setAdapter(mViewPagerAdapter);
-
-        tabs = (PagerSlidingTabStrip) findViewById(R.id.tabs);
-        tabs.setViewPager(mViewPager);
-
-        mViewPager.setPageMargin(getResources().getDimensionPixelSize(R.dimen.viewpager_pagemargin_width));
-        mViewPager.setPageMarginDrawable(android.R.drawable.divider_horizontal_bright);
-
-        mViewPagerAdapter.setWidgetIds(mAppWidgetIds);
-        mViewPagerAdapter.notifyDataSetChanged();
-
-        boolean hasWidgets = mAppWidgetIds.length > 0;
-        mAutoCompleteTextView.setVisibility(hasWidgets ? View.VISIBLE : View.GONE);
-        addButton.setVisibility(hasWidgets ? View.VISIBLE : View.GONE);
-        mViewPager.setVisibility(hasWidgets ? View.VISIBLE : View.GONE);
-        tabs.setVisibility(hasWidgets ? View.VISIBLE : View.GONE);
-        tabs.setIndicatorColor(Color.parseColor("#FF8800"));
-        findViewById(R.id.activity_main_filterTitle).setVisibility(hasWidgets ? View.VISIBLE : View.GONE);
-    }
+        @Override
+        public int getCount() {
+            return 3;
+        }
+    };
 
     @Override
     public void onBackPressed() {
@@ -158,65 +167,41 @@ public class MainActivity extends FragmentActivity implements TextWatcher, View.
 
     @Override
     protected void onPause() {
-
+        OttoManager.getInstance().unregister(this);
         super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        OttoManager.getInstance().register(this);
+        super.onResume();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         // Catch the return from the EditDialog
-        if (resultCode == Constants.EDIT_DIALOG_CHANGE) {
+        if (resultCode == AppConstants.EDIT_DIALOG_CHANGE) {
             Bundle bundle = data.getExtras();
-
-            Database database = new Database(this);
-            database.amendFilterEntryTo(bundle.getString("id"), bundle.getString("newText"));
-
-            updateFragments();
+            Database.getInstance(this).amendFilterEntryTo(bundle.getString("id"), bundle.getString("newText"));
         }
-    }
-
-    private void updateFragments() {
-        int currentItem = mViewPager.getCurrentItem();
-        for (int i = currentItem - 1; i <= currentItem + 1; i++) {
-            if (i >= 0 && i < mViewPagerAdapter.getCount()) {
-                getWidgetFragment(i).notifyDataSetChanged();
-            }
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            menu.add(0, Constants.MENU_ACTIVE_DEV, 0, "Active Dev").setIcon(R.drawable.ic_action_pin).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-            menu.add(0, Constants.MENU_SHORTCUT, 0, "Create Legacy Shortcut").setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
-            menu.add(0, Constants.MENU_SETTINGS, 0, "Settings").setIcon(R.drawable.ic_action_settings_white).setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
-//            menu.add(0, Constants.MENU_LOCALE_SWITCHER, 0, "Locale Switcher").setIcon(R.drawable.ic_action_globe).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        } else {
-            menu.add(0, Constants.MENU_SHORTCUT, 0, "Create Shortcut");
-            menu.add(0, Constants.MENU_SETTINGS, 0, "Settings");
-//            menu.add(0, Constants.MENU_LOCALE_SWITCHER, 0, "Locale Switcher");
-        }
-        return true;
     }
 
     @Override
     public boolean onMenuItemSelected(int featureId, MenuItem item) {
+        super.onMenuItemSelected(featureId, item);
         switch (item.getItemId()) {
-            case Constants.MENU_SHORTCUT: {
+            case R.id.menu_shortcut: {
                 addShortcut(this);
-                break;
+                return true;
             }
-            case Constants.MENU_SETTINGS: {
+            case R.id.menu_settings: {
                 startActivity(new Intent(MainActivity.this, PrefActivity.class));
-                break;
+                return true;
             }
-            case Constants.MENU_LOCALE_SWITCHER: {
-                startActivity(new Intent(this, LocaleSwitcher.class));
-                break;
-            }
+            default:
+                return false;
         }
-        return false;
     }
 
     public void addShortcut(Context context) {
@@ -228,7 +213,7 @@ public class MainActivity extends FragmentActivity implements TextWatcher, View.
         intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
         intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, "^DevDrawer");
         intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(context, R.drawable.shortcut_icon));
-        intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+        intent.setAction(getString(R.string.action_install_shortcut));
         context.sendBroadcast(intent);
     }
 
@@ -236,8 +221,6 @@ public class MainActivity extends FragmentActivity implements TextWatcher, View.
     @Override
     protected void onStop() {
         super.onStop();
-        //TODO is this really needed? It makes the prefActivity to close the app on backpress
-        // this is called to prevent a new app, back pressed, opening this activity
         finish();
     }
 
@@ -252,11 +235,6 @@ public class MainActivity extends FragmentActivity implements TextWatcher, View.
 
     @Override
     public void afterTextChanged(Editable editable) {
-        mPartialMatchAdapter.getFilter().filter(editable.toString());
-    }
-
-    private AppWidgetFragment getWidgetFragment(int position) {
-        return (AppWidgetFragment) mViewPagerAdapter.instantiateItem(mViewPager, position);
     }
 
     // Method to get all apps installed and return as List
@@ -287,83 +265,5 @@ public class MainActivity extends FragmentActivity implements TextWatcher, View.
         ArrayList<String> appList = new ArrayList<String>(appSet);
         Collections.sort(appList, collator);
         return appList;
-    }
-
-    public void update() {
-        mViewPagerAdapter.updateNames();
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (v.getId() == R.id.activity_main_addButton) {
-            if (mAutoCompleteTextView.getText().length() != 0) {
-                // Check filter doesn't exist
-                int appWidgetId = getWidgetFragment(mViewPager.getCurrentItem()).getAppWidgetId();
-                if (!mDatabase.doesFilterExist(mAutoCompleteTextView.getText().toString(), appWidgetId)) {
-                    // Add the filter to the mDatabase
-                    mDatabase.addFilterToDatabase(mAutoCompleteTextView.getText().toString(), appWidgetId);
-
-                    // Check existing apps and add to installed apps table if they match new filter
-                    new AddAllAppsAsync(MainActivity.this, mAutoCompleteTextView.getText().toString(), appWidgetId).execute();
-
-                    mAutoCompleteTextView.setText("");
-                    updateFragments();
-                } else {
-                    Toast.makeText(MainActivity.this, "Filter already exists", Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
-    }
-
-    private class WidgetFragmentViewPagerAdapter extends FragmentPagerAdapter {
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return mNames[position].toUpperCase(Locale.getDefault());
-        }
-
-        private int[] mWidgetIds;
-        private String[] mNames;
-
-        public WidgetFragmentViewPagerAdapter(FragmentManager fm) {
-            super(fm);
-            mWidgetIds = new int[0];
-        }
-
-        @Override
-        public Fragment getItem(int i) {
-            return AppWidgetFragment.newInstance(mWidgetIds[i]);
-        }
-
-        @Override
-        public int getCount() {
-            return mWidgetIds.length;
-        }
-
-        public void updateNames() {
-            Log.d("MainActivity", "updateNames");
-            mNames = new String[mWidgetIds.length];
-
-            Map<Integer, String> widgetNames = new Database(MainActivity.this).getWidgetNames();
-            for (int i = 0; i < mWidgetIds.length; i++) {
-                mNames[i] = widgetNames.get(mWidgetIds[i]);
-                if (mNames[i] == null){
-                    Log.d("mNamesNull", "Empty");
-                    mNames[i] = "Unnamed";
-                }
-                else {
-                    Log.d("mNames", mNames[i]);
-                }
-                if (mNames[i] == null || mNames[i].trim().isEmpty()) {
-                    mNames[i] = "No Name";
-                }
-            }
-            tabs.notifyDataSetChanged();
-        }
-
-        public void setWidgetIds(int[] widgetIds) {
-            mWidgetIds = widgetIds;
-            updateNames();
-        }
     }
 }

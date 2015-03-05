@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:background="#22FFFFFF">
 
     <!--<ImageView-->
         <!--android:id="@+id/orangeImage"-->
@@ -14,24 +14,33 @@
         android:id="@+id/widget_layout_titletv"
         android:layout_width="wrap_content"
         android:textColor="#FFFFFF"
-        android:background="#FF8800"
+        android:background="@color/dev_drawer_orange"
         android:textSize="14sp"
         android:paddingTop="2dp"
         android:paddingBottom="2dp"
-        android:layout_height="wrap_content"
+        android:layout_height="25dp"
         android:gravity="right|center_vertical"
         android:fontFamily="sans-serif-light"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
+        android:paddingLeft="40dp"
         android:textAllCaps="true"
+        android:text="DevDrawer"
         android:layout_alignParentLeft="true"/>
 
-    <!--<ImageView-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="2dp"-->
-        <!--android:id="@+id/widget_layout_titledivider"-->
-        <!--android:layout_below="@id/widget_layout_titletv"-->
-        <!--android:background="#FF8800" />-->
+    <ImageView android:id="@+id/refresh"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:src="@drawable/refresh"
+        android:padding="2dp"/>
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="25dp"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@id/widget_layout_titletv"
+        android:background="@drawable/orange_trans_gradient"/>
+
 
     <ListView
         android:layout_marginTop="2dp"
@@ -40,7 +49,8 @@
         android:layout_height="match_parent"
         android:layout_below="@id/widget_layout_titletv"
         android:divider="@null"
-        android:dividerHeight="0dp" />
+        android:layout_margin="5dp"
+        android:dividerHeight="5dp" />
 
 
 </RelativeLayout>

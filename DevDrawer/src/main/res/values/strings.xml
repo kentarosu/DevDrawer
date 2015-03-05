@@ -20,8 +20,7 @@
 
     <string name="name">Name</string>
 
-    <!-- New -->
-    <string name="packagefilter">PACKAGE:</string>
+    <string name="packagefilter">PACKAGE FILTER</string>
     <string name="yourcompanyhint">your.company.*</string>
     <string name="addlocales">ADD LOCALES:</string>
     <string name="localeHint">Language name or code</string>
@@ -32,6 +31,12 @@
     <string name="no_widgets">There are no widgets yet.</string>
     <string name="widget_name">WIDGET NAME:</string>
 
+    <string name="add_package_filter">Add Package Filter</string>
+    <string name="settings">Settings</string>
+    <string name="create_shortcut">Create Shortcut</string>
+    <string name="rename_widget">RENAME WIDGET</string>
+    <string name="choose_widget">CHOOSE WIDGET</string>
+
     <array name="launching_intents">
         <item>AOSP Launcher</item>
         <item>DevDrawer Original Config</item>
@@ -40,5 +45,12 @@
         <item>aosp</item>
         <item>devdrawer</item>
     </array>
+
+    <string name="tab_widgets">WIDGETS</string>
+    <string name="tab_notifications">NOTIFICATIONS</string>
+    <string name="tab_shortcut">SHORTCUT</string>
+    <string name="re_add_notice">You may need to re-add the widget for this change to take effect</string>
+    <string name="back_to_save">Press back to save the widget, not home</string>
+    <string name="action_install_shortcut">com.android.launcher.action.INSTALL_SHORTCUT</string>
 
 </resources>

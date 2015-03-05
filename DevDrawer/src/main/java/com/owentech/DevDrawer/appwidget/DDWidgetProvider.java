@@ -15,17 +15,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.RemoteViews;
 
 import com.owentech.DevDrawer.R;
 import com.owentech.DevDrawer.activities.ClickHandlingActivity;
+import com.owentech.DevDrawer.utils.AppConstants;
+import com.owentech.DevDrawer.utils.AppWidgetUtil;
 import com.owentech.DevDrawer.utils.Database;
 
 public class DDWidgetProvider extends AppWidgetProvider {
 
     public static String PACKAGE_STRING = "default.package";
+    public static String REFRESH = "refresh";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -44,25 +48,28 @@ public class DDWidgetProvider extends AppWidgetProvider {
         svcIntent.setData(Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME)));
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-
-        int widgetLayoutResId = sp.getString("theme", "Light").equals("Light") ? R.layout.widget_layout : R.layout.widget_layout_dark;
-        RemoteViews widget = new RemoteViews(context.getPackageName(), widgetLayoutResId);
+        RemoteViews widget = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
         widget.setRemoteAdapter(R.id.listView, svcIntent);
 
         Intent clickIntent = new Intent(context, ClickHandlingActivity.class);
         PendingIntent clickPI = PendingIntent.getActivity(context, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         String name = new Database(context).getWidgetNames().get(appWidgetId);
-
-        if (name == null || name.trim().isEmpty() || name.equalsIgnoreCase("unnamed")) {
-            widget.setViewVisibility(R.id.widget_layout_titletv, View.GONE);
-            widget.setViewVisibility(R.id.widget_layout_titledivider, View.GONE);
-        } else {
-            widget.setViewVisibility(R.id.widget_layout_titletv, View.VISIBLE);
-            widget.setViewVisibility(R.id.widget_layout_titledivider, View.VISIBLE);
-            widget.setTextViewText(R.id.widget_layout_titletv, name);
+        if (name == null || name.trim().isEmpty() || name.equalsIgnoreCase(AppConstants.UNNAMED)) {
+            name = "DevDrawer";
         }
+
+        widget.setViewVisibility(R.id.widget_layout_titletv, View.VISIBLE);
+        widget.setTextViewText(R.id.widget_layout_titletv, name);
         widget.setPendingIntentTemplate(R.id.listView, clickPI);
+
+        Intent refreshIntent = new Intent(context, DDWidgetProvider.class);
+        refreshIntent.setAction(REFRESH);
+        refreshIntent.getIntExtra("widgetId", appWidgetId);
+        PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, 0, refreshIntent, 0);
+
+        widget.setOnClickPendingIntent(R.id.refresh, refreshPendingIntent);
+
         return widget;
     }
 
@@ -74,4 +81,20 @@ public class DDWidgetProvider extends AppWidgetProvider {
             new Database(context).removeWidgetFromDatabase(appWidgetId);
         }
     }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+
+        if (intent.getAction().equals(REFRESH)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                int[] appWidgetIds = AppWidgetUtil.findAppWidgetIds(context);
+                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.listView);
+                onUpdate(context, appWidgetManager, appWidgetIds);
+            }
+        }
+    }
+
+
 }
